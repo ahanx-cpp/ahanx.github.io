@@ -10,6 +10,83 @@
 <script src="https://unpkg.com/gsap@3/dist/gsap.min.js"></script>
 <!-- Three.js -->
 <script src="https://unpkg.com/three@0.158/build/three.min.js"></script>
+
+<style>
+/* 深色极简对话框 - 全大写 - 金色主题 */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.7);
+  z-index: 9999;
+  justify-content: center;
+  align-items: center;
+}
+.modal-overlay.show {
+  display: flex;
+}
+.modal-box {
+  background: #111;
+  border: 1px solid #C9AA6D;
+  padding: 32px 40px;
+  max-width: 420px;
+  width: 90%;
+  text-align: center;
+  font-family: 'Courier New', monospace;
+  color: #C9AA6D;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.modal-box h2 {
+  margin: 0 0 20px 0;
+  font-size: 18px;
+  font-weight: normal;
+  color: #C9AA6D;
+}
+.modal-box input {
+  width: 80%;
+  padding: 10px 14px;
+  background: #000;
+  border: 1px solid #C9AA6D;
+  color: #C9AA6D;
+  font-family: 'Courier New', monospace;
+  font-size: 16px;
+  text-align: center;
+  text-transform: uppercase;
+  outline: none;
+  margin-bottom: 20px;
+}
+.modal-box input::placeholder {
+  color: #6B5B3A;
+  text-transform: uppercase;
+}
+.modal-buttons {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+}
+.modal-btn {
+  padding: 8px 28px;
+  background: transparent;
+  border: 1px solid #C9AA6D;
+  color: #C9AA6D;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all 0.2s;
+}
+.modal-btn:hover {
+  background: #C9AA6D;
+  color: #000;
+}
+.modal-message {
+  margin-top: 12px;
+  min-height: 22px;
+  font-size: 13px;
+  color: #C9AA6D;
+}
+</style>
 </head>
 
 <body>
@@ -25,8 +102,8 @@
     </nav>
     <div class="status">
       SYSTEM STATUS : NORMAL<br/>
-      USER : VISITOR MODE<br/>
-      TIME : ||ERROR||<br/>
+      USER : <span id="user-text" style="cursor:pointer;">VISITOR MODE</span><br/>
+      TIME : <span id="live-time">--/--/-- --:--:--</span><br/>
       © 2026 AHan.
     </div>
   </aside>
@@ -39,6 +116,117 @@
     </div>
   </main>
 </div>
+
+<!-- 深色极简对话框 - 金色主题 -->
+<div id="admin-modal" class="modal-overlay">
+  <div class="modal-box">
+    <h2>ADMINISTRATOR MODE:</h2>
+    <p style="margin:0 0 4px 0;font-size:13px;">ENTER YOUR KEY</p>
+    <input type="text" id="key-input" placeholder="KEY" autocomplete="off" />
+    <div class="modal-buttons">
+      <button class="modal-btn" id="submit-key">SUBMIT</button>
+      <button class="modal-btn" id="cancel-key">CANCEL</button>
+    </div>
+    <div class="modal-message" id="modal-message">&nbsp;</div>
+  </div>
+</div>
+
+<script>
+// ====== 实时时钟 ======
+function pad(n) { return String(n).padStart(2,'0'); }
+function updateClock() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = pad(now.getMonth()+1);
+  const d = pad(now.getDate());
+  const h = pad(now.getHours());
+  const min = pad(now.getMinutes());
+  const s = pad(now.getSeconds());
+  document.getElementById('live-time').textContent = `${y}/${m}/${d} ${h}:${min}:${s}`;
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+// ====== 计算公元元年元日到今天的日数差 ======
+function getDaysSinceEpoch() {
+  const now = new Date();
+  // 公元元年1月1日 00:00:00 UTC — JavaScript Date 用 0000年
+  const epoch = new Date(Date.UTC(1, 0, 1)); // 年份1, 月份0 (1月), 日期1
+  const diffMs = now.getTime() - epoch.getTime();
+  return Math.floor(diffMs / (1000 * 60 * 60 * 24));
+}
+
+const UNIVERSAL_KEY = "3948424173";
+let isAdminMode = false;
+
+// ====== 对话框逻辑 ======
+const modalOverlay = document.getElementById('admin-modal');
+const keyInput = document.getElementById('key-input');
+const modalMessage = document.getElementById('modal-message');
+const submitBtn = document.getElementById('submit-key');
+const cancelBtn = document.getElementById('cancel-key');
+const userText = document.getElementById('user-text');
+
+function openModal() {
+  modalOverlay.classList.add('show');
+  keyInput.value = '';
+  modalMessage.innerHTML = '&nbsp;';
+  keyInput.focus();
+}
+
+function closeModal() {
+  modalOverlay.classList.remove('show');
+}
+
+function handleSubmit() {
+  const enteredKey = keyInput.value.trim();
+  const todayKey = String(getDaysSinceEpoch());
+
+  if (enteredKey === todayKey || enteredKey === UNIVERSAL_KEY) {
+    // KEY正确
+    modalMessage.textContent = 'WELCOME, ADMINISTRATOR.';
+    
+    // 将 USER 改为 ADMINISTRATOR MODE
+    userText.textContent = 'ADMINISTRATOR MODE';
+    isAdminMode = true;
+    
+    // 3秒后关闭对话框
+    setTimeout(() => {
+      closeModal();
+    }, 2000);
+  } else {
+    // KEY错误
+    modalMessage.textContent = 'KEY IS WRONG.';
+    setTimeout(() => {
+      closeModal();
+    }, 1500);
+  }
+}
+
+// 点击 USER 打开对话框
+userText.addEventListener('click', openModal);
+
+// 提交按钮
+submitBtn.addEventListener('click', handleSubmit);
+
+// 回车键提交
+keyInput.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    handleSubmit();
+  }
+});
+
+// 取消按钮
+cancelBtn.addEventListener('click', closeModal);
+
+// 点击遮罩层关闭
+modalOverlay.addEventListener('click', function(e) {
+  if (e.target === modalOverlay) {
+    closeModal();
+  }
+});
+</script>
 
 <script src="js/main.js"></script>
 </body>
