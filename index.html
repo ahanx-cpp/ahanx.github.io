@@ -132,7 +132,7 @@
 </div>
 
 <script>
-// ====== 实时时钟（精确到毫秒） ======
+// ====== 实时时钟（精确到毫秒，使用 requestAnimationFrame） ======
 function pad(n) { return String(n).padStart(2,'0'); }
 function padMilliseconds(n) { return String(n).padStart(3,'0'); }
 
@@ -146,10 +146,13 @@ function updateClock() {
   const s = pad(now.getSeconds());
   const ms = padMilliseconds(now.getMilliseconds());
   document.getElementById('live-time').textContent = `${y}/${m}/${d} ${h}:${min}:${s}.${ms}`;
+  
+  // 使用 requestAnimationFrame 持续更新，与屏幕刷新同步
+  requestAnimationFrame(updateClock);
 }
-updateClock();
-// 每50毫秒刷新一次，保证毫秒值平滑变化
-setInterval(updateClock, 50);
+
+// 启动时钟
+requestAnimationFrame(updateClock);
 
 // ====== 计算公元元年元日到今天的日数差 ======
 function getDaysSinceEpoch() {
@@ -197,7 +200,7 @@ function handleSubmit() {
     // 3秒后关闭对话框
     setTimeout(() => {
       closeModal();
-    }, 2500);
+    }, 2800);
   } else {
     // KEY错误
     modalMessage.textContent = 'KEY IS WRONG.';
